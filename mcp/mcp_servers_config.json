@@ -1,0 +1,22 @@
+{
+  "servers": {
+    "fetch": {
+      "enabled": true
+    },
+    "mcp": {
+      "enabled": true
+    },
+    "playwright": {
+      "enabled": false
+    },
+    "desktop-commander": {
+      "enabled": false
+    },
+    "firecrawl": {
+      "enabled": false
+    },
+    "github-repo": {
+      "enabled": false
+    }
+  }
+}

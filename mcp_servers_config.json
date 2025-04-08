@@ -1,0 +1,36 @@
+{
+    "mcpServers": {
+        "fetch": {
+            "command": "python",
+            "args": [
+                "-m",
+                "mcp.server.fetch"
+            ]
+        },
+        "playwright": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@executeautomation/playwright-mcp-server"
+            ]
+        },
+        "web": {
+            "command": "python",
+            "args": [
+                "-m",
+                "mcp.server.web"
+            ]
+        },
+        "news": {
+            "command": "python",
+            "args": [
+                "-m",
+                "mcp.server.news"
+            ]
+        }
+    },
+    "defaultServer": "web",
+    "timeout": 30,
+    "retryAttempts": 3,
+    "retryDelay": 1
+}

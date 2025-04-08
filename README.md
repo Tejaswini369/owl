@@ -449,96 +449,204 @@ Here are some tasks you can try with OWL:
 
 ## Model Context Protocol (MCP)
 
-OWL's MCP integration provides a standardized way for AI models to interact with various tools and data sources:
+A high-performance system for interacting with large language models (LLMs) and the MCP toolkit.
 
-Before using MCP, you need to install Node.js first.
-### **Install Node.js**
-### Windows
+## Features
 
-Download the official installer: [Node.js](https://nodejs.org/en).
+- Support for multiple LLM providers (Anthropic, Groq)
+- MCP toolkit integration for enhanced capabilities
+- Fallback implementation for when MCP toolkit is not available
+- Asynchronous API for improved performance
+- Comprehensive error handling and logging
+- Response caching for faster repeated queries
+- Configurable timeouts and retries
+- Command-line interface for easy interaction
+- Performance diagnosis and optimization tools
 
-Check "Add to PATH" option during installation.
+## Installation
 
-### Linux
+### Prerequisites
+
+- Python 3.8+
+- Node.js 14+
+- npm (Node.js package manager)
+
+### Python Dependencies
+
 ```bash
-sudo apt update
-sudo apt install nodejs npm -y
+pip install anthropic openai python-dotenv requests beautifulsoup4 psutil
 ```
-### Mac
+
+### MCP Server Dependencies
+
 ```bash
-brew install node
+python install_mcp_servers.py
 ```
 
-### **Install Playwright MCP Service**
+This will install the necessary MCP server dependencies and create the required configuration files.
+
+## Environment Configuration
+
+Create a `.env` file in the project root with the following variables:
+
+```
+ANTHROPIC_API_KEY=your_anthropic_api_key
+GROQ_API_KEY=your_groq_api_key
+```
+
+## Project Structure
+
+```
+.
+├── fast_mcp_router.py      # High-performance MCP router
+├── mcp_toolkit.py          # MCP toolkit integration
+├── test_mcp_toolkit.py     # Test script for MCP toolkit
+├── install_mcp_servers.py  # MCP server installation script
+├── example.py              # Example script
+├── cli.py                  # Command-line interface
+├── diagnose_performance.py # Performance diagnosis script
+├── mcp/                    # MCP directory
+│   ├── mcp_servers_config.json  # MCP server configuration
+│   ├── fetch-server.js     # Fetch server startup script
+│   ├── mcp-server.js       # MCP server startup script
+│   ├── firecrawl-server.js # Firecrawl server startup script
+│   ├── playwright-server.js # Playwright server startup script
+│   ├── desktop-commander-server.js # Desktop commander server startup script
+│   └── github-repo-server.js # GitHub repo server startup script
+└── README.md               # This file
+```
+
+## Usage
+
+### Command-Line Interface
+
+The MCP system provides a command-line interface for easy interaction:
+
 ```bash
-npm install -g @executeautomation/playwright-mcp-server
-npx playwright install-deps
+# Run a single query
+python cli.py --query "What is the capital of France?"
+
+# Run with MCP toolkit enabled
+python cli.py --use-mcp --query "Find the latest news about artificial intelligence."
+
+# Run in interactive mode
+python cli.py --use-mcp
+
+# Run with custom settings
+python cli.py --model anthropic --user-role user --assistant-role assistant --language en --use-mcp --cache --timeout 60
 ```
 
-Try our comprehensive MCP example in `examples/run_mcp.py` to see these capabilities in action!
-
-## Available Toolkits
-
-> **Important**: Effective use of toolkits requires models with strong tool calling capabilities. For multimodal toolkits (Web, Image, Video), models must also have multimodal understanding abilities.
-
-OWL supports various toolkits that can be customized by modifying the `tools` list in your script:
+### Basic Usage (Direct LLM Calls)
 
 ```python
-# Configure toolkits
-tools = [
-    *BrowserToolkit(headless=False).get_tools(),  # Browser automation
-    *VideoAnalysisToolkit(model=models["video"]).get_tools(),
-    *AudioAnalysisToolkit().get_tools(),  # Requires OpenAI Key
-    *CodeExecutionToolkit(sandbox="subprocess").get_tools(),
-    *ImageAnalysisToolkit(model=models["image"]).get_tools(),
-    SearchToolkit().search_duckduckgo,
-    SearchToolkit().search_google,  # Comment out if unavailable
-    SearchToolkit().search_wiki,
-    SearchToolkit().search_bocha,
-    SearchToolkit().search_baidu,
-    *ExcelToolkit().get_tools(),
-    *DocumentProcessingToolkit(model=models["document"]).get_tools(),
-    *FileWriteToolkit(output_dir="./").get_tools(),
-]
+import asyncio
+from fast_mcp_router import FastMCPRouter
+
+async def main():
+    # Initialize the router with MCP toolkit disabled
+    router = FastMCPRouter(
+        model="anthropic",
+        user_role_name="user",
+        assistant_role_name="assistant",
+        output_language="en",
+        use_mcp=False
+    )
+    
+    # Send a query
+    response = await router.chat_with_mcp("What is the capital of France?")
+    print(response)
+
+# Run the main function
+asyncio.run(main())
 ```
 
-## Available Toolkits
-
-Key toolkits include:
-
-### Multimodal Toolkits (Require multimodal model capabilities)
-- **BrowserToolkit**: Browser automation for web interaction and navigation
-- **VideoAnalysisToolkit**: Video processing and content analysis
-- **ImageAnalysisToolkit**: Image analysis and interpretation
-
-### Text-Based Toolkits
-- **AudioAnalysisToolkit**: Audio processing (requires OpenAI API)
-- **CodeExecutionToolkit**: Python code execution and evaluation
-- **SearchToolkit**: Web searches (Google, DuckDuckGo, Wikipedia)
-- **DocumentProcessingToolkit**: Document parsing (PDF, DOCX, etc.)
-
-Additional specialized toolkits: ArxivToolkit, GitHubToolkit, GoogleMapsToolkit, MathToolkit, NetworkXToolkit, NotionToolkit, RedditToolkit, WeatherToolkit, and more. For a complete list, see the [CAMEL toolkits documentation](https://docs.camel-ai.org/key_modules/tools.html#built-in-toolkits).
-
-## Customizing Your Configuration
-
-To customize available tools:
+### Advanced Usage (MCP Toolkit Integration)
 
 ```python
-# 1. Import toolkits
-from camel.toolkits import BrowserToolkit, SearchToolkit, CodeExecutionToolkit
+import asyncio
+import os
+from fast_mcp_router import FastMCPRouter
 
-# 2. Configure tools list
-tools = [
-    *BrowserToolkit(headless=True).get_tools(),
-    SearchToolkit().search_wiki,
-    *CodeExecutionToolkit(sandbox="subprocess").get_tools(),
-]
+async def main():
+    # Set up the MCP path
+    mcp_path = os.path.join(os.getcwd(), "mcp")
+    
+    # Initialize the router with MCP toolkit enabled
+    router = FastMCPRouter(
+        model="anthropic",
+        user_role_name="user",
+        assistant_role_name="assistant",
+        output_language="en",
+        mcp_path=mcp_path,
+        use_mcp=True,
+        cache_responses=True,
+        timeout=60
+    )
+    
+    # Send a query that uses the MCP toolkit
+    response = await router.chat_with_mcp("Find the latest news about artificial intelligence.")
+    print(response)
 
-# 3. Pass to assistant agent
-assistant_agent_kwargs = {"model": models["assistant"], "tools": tools}
+# Run the main function
+asyncio.run(main())
 ```
 
-Selecting only necessary toolkits optimizes performance and reduces resource usage.
+## Testing
+
+### Test MCP Toolkit Integration
+
+```bash
+python test_mcp_toolkit.py
+```
+
+This will run a series of tests to verify that the MCP toolkit integration is working correctly.
+
+### Performance Diagnosis
+
+```bash
+python diagnose_performance.py
+```
+
+This will run a series of performance tests and generate a report with metrics such as response time, CPU usage, and memory usage. The results are saved to `performance_results.json`.
+
+## Available MCP Features
+
+The MCP toolkit provides the following features:
+
+- **Fetch Server**: For fetching webpages and making HTTP requests
+- **MCP Server**: Core MCP functionality
+- **Firecrawl Server**: For web scraping and data extraction
+- **Playwright Server**: For browser automation
+- **Desktop Commander Server**: For executing system commands
+- **GitHub Repo Server**: For interacting with GitHub repositories
+
+## Troubleshooting
+
+### Common Issues
+
+1. **ModuleNotFoundError: No module named 'owl.utils'**
+   - This error occurs when the owl package is not installed or not in the Python path.
+   - Solution: Install the owl package or add it to the Python path.
+
+2. **MCP Toolkit Connection Issues**
+   - This can happen if the MCP servers are not running or not properly configured.
+   - Solution: Run `python install_mcp_servers.py` to reinstall the MCP servers.
+
+3. **API Key Issues**
+   - Make sure your API keys are correctly set in the `.env` file.
+   - Solution: Check the `.env` file and ensure the API keys are valid.
+
+4. **Timeout Issues**
+   - If queries are timing out, try increasing the timeout value.
+   - Solution: Set a higher timeout value when initializing the router.
+
+5. **Performance Issues**
+   - If you're experiencing slow response times or high resource usage, run the performance diagnosis script.
+   - Solution: Use the performance diagnosis script to identify bottlenecks and optimize accordingly.
+
+## License
+
+This project is licensed under the MIT License.
 
 # 🌐 Web Interface
 
@@ -669,6 +777,84 @@ cd camel
 
 [![Star History Chart](https://api.star-history.com/svg?repos=camel-ai/owl&type=Date)](https://star-history.com/#camel-ai/owl&Date)
 
+## Performance Optimization
+
+The MCP system includes tools for performance diagnosis and optimization:
+
+1. **Performance Diagnosis**
+   - Run `python diagnose_performance.py` to analyze system performance
+   - Generates a report with metrics including response time, CPU usage, and memory usage
+   - Results are saved to `performance_results.json`
+
+2. **Performance Optimization**
+   - Run `python optimize_performance.py` to optimize the system based on diagnosis results
+   - Automatically adjusts settings like timeout and caching based on performance metrics
+   - Calculates and reports performance improvements
+   - Results are saved to `optimized_results.json`
+
+3. **Optimization Features**
+   - Dynamic timeout adjustment based on average response times
+   - Response caching for frequently used queries
+   - Memory usage optimization
+   - CPU usage monitoring and optimization
+
+4. **Performance Monitoring**
+   - Real-time logging of performance metrics
+   - Detailed performance reports
+   - Improvement tracking over time
+
+## MCP Server Setup and Troubleshooting
+
+### Setting Up MCP Servers
+
+The MCP system requires several Node.js servers to be running for full functionality. To set up and start the MCP servers:
+
+1. Run the server setup script:
+   ```bash
+   python fix_mcp_servers.py
+   ```
+
+This script will:
+- Create the necessary MCP directory structure
+- Set up server configuration files
+- Create server startup scripts
+- Install required Node.js dependencies
+- Start the MCP servers
+
+### Server Configuration
+
+The MCP servers are configured in `mcp/mcp_servers_config.json`. The default configuration includes:
+
+- `fetch` server (port 3000): Handles web content fetching
+- `mcp` server (port 3001): Core MCP functionality
+- `firecrawl` server (port 3002): Web scraping capabilities
+- `playwright` server (port 3003): Browser automation
+- `desktop-commander` server (port 3004): System command execution
+- `github-repo` server (port 3005): GitHub repository operations
+
+### Troubleshooting MCP Servers
+
+If you encounter issues with the MCP servers:
+
+1. **Connection Refused Errors**
+   - Run `python fix_mcp_servers.py` to check and fix server configuration
+   - The script will automatically detect port conflicts and reassign ports if needed
+   - Check the logs for specific error messages
+
+2. **Server Startup Issues**
+   - Ensure Node.js and npm are installed on your system
+   - Check if the required ports are available
+   - Verify that the MCP directory structure is correct
+
+3. **Server Maintenance**
+   - The servers can be stopped by pressing Ctrl+C in the terminal running `fix_mcp_servers.py`
+   - To restart the servers, simply run the script again
+   - The script will automatically handle server cleanup and restart
+
+4. **Common Issues and Solutions**
+   - If servers fail to start, check the Node.js version and update if necessary
+   - For port conflicts, the script will automatically find alternative ports
+   - If the MCP directory is corrupted, delete it and run the script again to recreate it
 
 
 [docs-image]: https://img.shields.io/badge/Documentation-EB3ECC
@@ -694,3 +880,177 @@ cd camel
 [ambassador-url]: https://www.camel-ai.org/community
 [owl-url]: ./assets/qr_code.jpg
 [owl-image]: https://img.shields.io/badge/WeChat-OWLProject-brightgreen?logo=wechat&logoColor=white
+
+# OWL Tools
+
+A collection of tools for fetching and processing various types of data, built on top of the OWL framework.
+
+## Tools
+
+### News Tool
+- Fetch news articles from various sources
+- Filter articles by keyword, source, and date
+- Extract content and summarize articles
+- Search for specific topics
+
+### Weather Tool
+- Get current weather conditions
+- Fetch weather forecasts
+- Check air quality
+- Access historical weather data
+
+### Stocks Tool
+- Get real-time stock prices
+- Fetch historical stock data
+- Search for companies
+- Get market summaries
+- Access company information
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/owl-tools.git
+cd owl-tools
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Set up environment variables:
+```bash
+cp .env.template .env
+# Edit .env with your API keys and settings
+```
+
+## Usage
+
+### News Tool
+
+```python
+from tools.news import NewsClient
+
+async def main():
+    client = NewsClient()
+    await client.initialize()
+    
+    try:
+        # Fetch news articles
+        response = await client.fetch_news("artificial intelligence", limit=10)
+        
+        # Filter articles
+        filtered = await client.filter_news(
+            response['articles'],
+            keyword="machine learning",
+            limit=5
+        )
+        
+        # Print results
+        for article in filtered:
+            print(f"Title: {article['title']}")
+            print(f"Source: {article['source']}")
+            print(f"Link: {article['link']}")
+            print("---")
+    finally:
+        await client.cleanup()
+
+# Run the example
+import asyncio
+asyncio.run(main())
+```
+
+### Weather Tool
+
+```python
+from tools.weather import WeatherClient
+
+async def main():
+    client = WeatherClient(api_key="your_api_key")
+    await client.initialize()
+    
+    try:
+        # Get current weather
+        weather = await client.get_current_weather("London")
+        print(f"Temperature: {weather['temperature']}°C")
+        print(f"Condition: {weather['condition']}")
+        
+        # Get forecast
+        forecast = await client.get_forecast("London", days=3)
+        for day in forecast['forecast']:
+            print(f"Date: {day['date']}")
+            print(f"Max Temp: {day['max_temp']}°C")
+            print(f"Min Temp: {day['min_temp']}°C")
+            print("---")
+    finally:
+        await client.cleanup()
+
+# Run the example
+import asyncio
+asyncio.run(main())
+```
+
+### Stocks Tool
+
+```python
+from tools.stocks import StocksClient
+
+async def main():
+    client = StocksClient(api_key="your_api_key")
+    await client.initialize()
+    
+    try:
+        # Get stock price
+        price = await client.get_stock_price("AAPL")
+        print(f"Price: ${price['price']}")
+        print(f"Change: {price['change_percent']}%")
+        
+        # Get company info
+        info = await client.get_company_info("AAPL")
+        print(f"Company: {info['name']}")
+        print(f"Sector: {info['sector']}")
+        print(f"Industry: {info['industry']}")
+    finally:
+        await client.cleanup()
+
+# Run the example
+import asyncio
+asyncio.run(main())
+```
+
+## Project Structure
+
+```
+owl-tools/
+├── tools/
+│   ├── common/
+│   │   ├── __init__.py
+│   │   └── base_client.py
+│   ├── news/
+│   │   ├── __init__.py
+│   │   ├── news_client.py
+│   │   └── test_news.py
+│   ├── weather/
+│   │   ├── __init__.py
+│   │   └── weather_client.py
+│   ├── stocks/
+│   │   ├── __init__.py
+│   │   └── stocks_client.py
+│   └── __init__.py
+├── requirements.txt
+├── README.md
+└── .env
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
